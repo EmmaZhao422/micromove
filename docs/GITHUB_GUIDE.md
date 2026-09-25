@@ -4,6 +4,8 @@
 
 推荐每天完成一小块可验证的改动再提交，例如 `feat: add reminder snooze`、`fix: prevent duplicate reminders`、`docs: explain installation`。不要把实际未完成的功能写进提交说明。
 
+首次同步说明：这次通过已登录的浏览器上传。远端提交历史与本机最初的两个提交不同；终端 GitHub 登录尚未配置。配置 Git 登录后，应先将远端仓库 clone 到一个新目录并作为后续工作副本，保留原目录作为备份。不要直接对当前本机 main 强制推送，以免覆盖远端历史。下面日常流程适用于新的 clone。
+
 日常流程：
 
 ```bash

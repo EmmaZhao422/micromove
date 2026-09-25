@@ -2,7 +2,7 @@
 
 ## 本机结果
 
-2026-09-25 已执行 `codex plugin add micromove@personal`，成功安装到 Codex 的 personal 插件缓存。源码位于工作目录 `micromove`。个人市场以 `~/plugins/micromove` 的软链接访问源码；只提交仓库内容，不提交个人市场配置。
+2026-09-25 已执行 `codex plugin add micromove@personal`，成功安装到 Codex 的 personal 插件缓存。Windows 编码修复后已通过 cachebuster 流程重新安装，当前缓存版本为 `0.1.0+codex.20260925182559`。源码位于工作目录 `micromove`。个人市场以 `~/plugins/micromove` 的软链接访问源码；只提交仓库内容，不提交个人市场配置。
 
 当前运行时 `codex-cli 0.155.0-alpha.16.4`，`hooks` 和 `plugins` 功能为 true。这不是所有 Codex 版本的保证。
 
