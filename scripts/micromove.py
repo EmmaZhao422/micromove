@@ -113,6 +113,10 @@ def run_hook():
 
 
 def main():
+    # Hooks communicate over UTF-8 pipes, including on legacy Windows locales.
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8')
     p = argparse.ArgumentParser(description=__doc__)
     commands = p.add_subparsers(dest='command', required=True)
     for name in ('status', 'enable', 'pause', 'check', 'demo', 'start', 'done', 'hook'):
