@@ -49,7 +49,7 @@ class EngineTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             env={**os.environ, 'MICROMOVE_DATA_DIR': d}
             for raw in ('not json', '[]', '{"hook_event_name":"Stop","stop_hook_active":true}'):
-                p=subprocess.run([sys.executable,str(SCRIPT),'hook'],input=raw,text=True,capture_output=True,env=env)
+                p=subprocess.run([sys.executable,str(SCRIPT),'hook'],input=raw,text=True,encoding="utf-8",capture_output=True,env=env)
                 self.assertEqual(p.returncode,0)
                 self.assertEqual(json.loads(p.stdout),{})
             self.assertEqual(list(Path(d).iterdir()),[])
@@ -58,7 +58,7 @@ class EngineTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             env={**os.environ,'MICROMOVE_DATA_DIR':d}
             def cli(*args):
-                p=subprocess.run([sys.executable,str(SCRIPT),*args],capture_output=True,text=True,env=env)
+                p=subprocess.run([sys.executable,str(SCRIPT),*args],capture_output=True,text=True,encoding="utf-8",env=env)
                 self.assertEqual(p.returncode,0,p.stderr)
                 return json.loads(p.stdout)
             self.assertFalse(cli('status')['enabled'])
@@ -74,7 +74,7 @@ class EngineTest(unittest.TestCase):
             env = {**os.environ, 'MICROMOVE_DATA_DIR': d}
             def cli(*args, raw=None):
                 return subprocess.run([sys.executable, str(SCRIPT), *args],
-                                      input=raw, capture_output=True, text=True, env=env)
+                                      input=raw, capture_output=True, text=True,encoding="utf-8", env=env)
             self.assertEqual(cli('enable').returncode, 0)
             self.assertEqual(cli('configure', '--times', datetime.now().strftime('%H:%M')).returncode, 0)
             raw = json.dumps({'hook_event_name': 'Stop', 'last_assistant_message': 'PRIVATE_TEST_MARKER'})
@@ -84,6 +84,18 @@ class EngineTest(unittest.TestCase):
             self.assertEqual(json.loads(cli('hook', raw=raw).stdout), {})
             for file in Path(d).iterdir():
                 self.assertNotIn(b'PRIVATE_TEST_MARKER', file.read_bytes())
+
+    def test_utf8_output_under_legacy_windows_encoding(self):
+        with tempfile.TemporaryDirectory() as d:
+            env = {**os.environ, 'MICROMOVE_DATA_DIR': d, 'PYTHONIOENCODING': 'cp1252'}
+            result = subprocess.run([sys.executable, str(SCRIPT), 'demo'],
+                                    capture_output=True, env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout.decode('utf-8'))['message'], e.MESSAGE)
+            invalid = subprocess.run([sys.executable, str(SCRIPT), 'snooze', '0'],
+                                     capture_output=True, env=env)
+            self.assertEqual(invalid.returncode, 2)
+            self.assertIn('分钟数', invalid.stderr.decode('utf-8'))
 
     def test_concurrent_checks_deliver_once(self):
         with tempfile.TemporaryDirectory() as d:
