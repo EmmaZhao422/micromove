@@ -1,18 +1,18 @@
 {
   "name": "micromove",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260925182559",
   "description": "Gentle, local work-break reminders for Codex.",
   "author": {
     "name": "Emma Zhao"
   },
   "skills": "./skills/",
   "interface": {
-    "displayName": "MicroMove · 回个电",
-    "shortDescription": "工作间隙，轻轻提醒你动一下。",
+    "displayName": "MicroMove \u00b7 \u56de\u4e2a\u7535",
+    "shortDescription": "\u5de5\u4f5c\u95f4\u9699\uff0c\u8f7b\u8f7b\u63d0\u9192\u4f60\u52a8\u4e00\u4e0b\u3002",
     "longDescription": "Local, opt-in movement reminders with snooze and pause. Technical preview.",
     "developerName": "Emma Zhao",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "用 MicroMove 设置工作间隙提醒"
+    "defaultPrompt": "\u7528 MicroMove \u8bbe\u7f6e\u5de5\u4f5c\u95f4\u9699\u63d0\u9192"
   }
 }
