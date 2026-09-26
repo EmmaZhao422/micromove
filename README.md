@@ -4,7 +4,7 @@ Gentle, local work-break reminders for Codex. 在工作间隙，给自己充一�
 
 **v0.1.0 技术预览** · Python 3.10+ · 零第三方依赖 · 默认关闭 · 数据仅保存在本机
 
-这是 Emma Zhao 的第一个 GitHub 项目：探索如何让 AI 编程工具在自然停顿时提供轻量运动提醒。主要目标平台为 Codex；附带 Claude Code 兼容清单，尚未完成 Claude 主机实测。
+探索如何让 AI 编程工具在自然停顿时提供轻量运动提醒。主要目标平台为 Codex；附带 Claude Code 兼容清单，尚未完成 Claude 主机实测。
 
 ## 已实现
 
