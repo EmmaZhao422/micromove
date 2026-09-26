@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 import json
 import os
+import platform
 from pathlib import Path
 import sqlite3
 import sys
@@ -104,6 +105,11 @@ def run_hook():
         if event.get('hook_event_name') not in ('SessionStart', 'Stop'):
             return {}
         with state() as s:
+            s['last_hook'] = {'event': event['hook_event_name'],
+                              'at': datetime.now().astimezone().isoformat(),
+                              'script': str(Path(__file__).resolve())}
+            if s.pop('probe_pending', False):
+                return {'systemMessage': 'MicroMove 安装检查通过：已收到 ' + event['hook_event_name'] + ' 事件。'}
             if due(s, datetime.now().astimezone()):
                 return {'systemMessage': MESSAGE + ' MicroMove：回复“现在动一下”或“10 分钟后提醒”。'}
     except (ValueError, OSError, sqlite3.Error, KeyError, TypeError):
@@ -119,7 +125,7 @@ def main():
             stream.reconfigure(encoding='utf-8')
     p = argparse.ArgumentParser(description=__doc__)
     commands = p.add_subparsers(dest='command', required=True)
-    for name in ('status', 'enable', 'pause', 'check', 'demo', 'start', 'done', 'hook'):
+    for name in ('status', 'enable', 'pause', 'check', 'demo', 'start', 'done', 'hook', 'doctor', 'probe'):
         commands.add_parser(name)
     snooze = commands.add_parser('snooze')
     snooze.add_argument('minutes', type=minutes, nargs='?', default=10)
@@ -138,6 +144,7 @@ def main():
             elif args.command == 'pause':
                 s['enabled'] = False
                 s['snooze_until'] = 0
+                s.pop('probe_pending', None)
             elif args.command == 'configure':
                 if args.times is not None:
                     s['times'] = sorted(set(args.times))
@@ -151,7 +158,20 @@ def main():
                 s['snooze_until'] = 0
                 s['seen'] = [now.strftime('%Y-%m-%d') + '/' + t for t in s['times']
                              if t <= now.strftime('%H:%M')]
-            if args.command == 'check':
+            elif args.command == 'probe':
+                s['probe_pending'] = True
+            if args.command == 'doctor':
+                result = {'python': platform.python_version(),
+                          'python_supported': sys.version_info >= (3, 10),
+                          'state_storage': 'ok', 'data_directory': str(data_dir()),
+                          'enabled': s['enabled'], 'last_hook': s.get('last_hook'),
+                          'probe_pending': s.get('probe_pending', False),
+                          'host_trust': 'unknown', 'ui_delivery': 'unverified',
+                          'next_step': '在 Codex /hooks 中核对两个 MicroMove hooks 均为 Active；运行 probe 后结束一次回复，确认界面出现安装检查消息。历史事件记录不代表当前授权或界面显示正常。'}
+            elif args.command == 'probe':
+                result = {'probe_pending': True,
+                          'note': '下一次 SessionStart / Stop 将显示一次安装检查消息，不改变提醒开关或消费计划。请观察主机界面；不要手动调用 hook 或 check 代替验收。'}
+            elif args.command == 'check':
                 result = reminder(s) if due(s, now) else {'due': False}
             elif args.command in ('demo', 'start'):
                 result = reminder(s)
