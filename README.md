@@ -10,6 +10,7 @@ Gentle, local work-break reminders for Codex. 在工作间隙，给自己充一�
 
 - 默认 11:00 / 16:00 的事件式提醒，可自定义时间。
 - 开启、暂停、稍后提醒、手动预览和完成确认。
+- `doctor` 安装诊断与 `probe` 真实事件验收，避免把配置成功误报成提醒就绪。
 - 多任务共用状态，避免同一时段重复提醒。
 - 配置团队跟练网页入口；不捏造动作库，不生成运动处方。
 - Codex 插件 manifest、skill、SessionStart / Stop hooks。
@@ -21,6 +22,7 @@ Gentle, local work-break reminders for Codex. 在工作间隙，给自己充一�
 从本仓库根目录运行：
 
 ```bash
+python3 scripts/micromove.py doctor
 python3 scripts/micromove.py demo
 python3 scripts/micromove.py enable
 python3 scripts/micromove.py configure --times 11:00 16:00
@@ -29,7 +31,7 @@ python3 scripts/micromove.py status
 python3 scripts/micromove.py pause
 ```
 
-Windows 可用 `python` 替代 `python3`。时间采用电脑当前本地时区，变更时区后随系统切换。
+Windows 手动运行 CLI 可用 `python` 替代 `python3`；自动 hooks 当前要求 `python3` 在宿主 PATH 中可用，完整安装仍需验收。时间采用电脑当前本地时区，变更时区后随系统切换。
 
 `demo` 只预览；`check` 会消费当前到期提醒。`start` 返回跟练链接，`done` 仅在用户主动确认后使用。配置真实团队网址：`configure --url <网址>`，支持 HTTPS 或 localhost HTTP。未配置时不会打开一个假地址。
 
@@ -68,6 +70,6 @@ docs/                       开发规划、安装验收、GitHub 指南
 
 ## 隐私与授权
 
-只保存开关、计划时间、跟练 URL、稍后时间和去重键，位置为 `~/.micromove/state.sqlite3`。测试可设置 `MICROMOVE_DATA_DIR`。没有遥测、API key、第三方请求或代码/对话采集。插件不会自行开启后台任务。移除插件不会删除个人设置。
+只保存开关、计划时间、跟练 URL、稍后时间、去重键、待执行的安装检查，以及最近一次 hook 的事件名、时间和脚本路径，位置为 `~/.micromove/state.sqlite3`。测试可设置 `MICROMOVE_DATA_DIR`。没有遥测、API key、第三方请求或代码/对话采集。插件不会自行开启后台任务。移除插件不会删除个人设置。
 
 本仓库不包含团队原始需求文档、问卷、会议纪要或动作图片。当前未授予开源许可证；公开发布及团队资产的再分发需另行确定。
