@@ -97,6 +97,35 @@ class EngineTest(unittest.TestCase):
             self.assertEqual(invalid.returncode, 2)
             self.assertIn('分钟数', invalid.stderr.decode('utf-8'))
 
+    def test_install_probe_and_doctor_do_not_consume_reminder(self):
+        with tempfile.TemporaryDirectory(prefix='微习惯 test ') as d:
+            env = {**os.environ, 'MICROMOVE_DATA_DIR': d}
+            def cli(*args, raw=None):
+                p = subprocess.run([sys.executable, str(SCRIPT), *args], input=raw,
+                                   capture_output=True, text=True, encoding='utf-8', env=env)
+                self.assertEqual(p.returncode, 0, p.stderr)
+                return json.loads(p.stdout)
+            report = cli('doctor')
+            self.assertIsNone(report['last_hook'])
+            self.assertEqual(report['host_trust'], 'unknown')
+            self.assertFalse(report['enabled'])
+            cli('enable')
+            cli('configure', '--times', datetime.now().strftime('%H:%M'))
+            cli('probe')
+            raw = json.dumps({'hook_event_name': 'Stop', 'last_assistant_message': 'PRIVATE_PROBE_MARKER'})
+            self.assertIn('安装检查', cli('hook', raw=raw)['systemMessage'])
+            report = cli('doctor')
+            self.assertFalse(report['probe_pending'])
+            self.assertEqual(report['last_hook']['event'], 'Stop')
+            self.assertEqual(report['ui_delivery'], 'unverified')
+            self.assertIn(e.MESSAGE, cli('hook', raw=raw)['systemMessage'])
+            self.assertEqual(cli('hook', raw=raw), {})
+            cli('probe')
+            cli('pause')
+            self.assertEqual(cli('hook', raw=raw), {})
+            for file in Path(d).iterdir():
+                self.assertNotIn(b'PRIVATE_PROBE_MARKER', file.read_bytes())
+
     def test_concurrent_checks_deliver_once(self):
         with tempfile.TemporaryDirectory() as d:
             old=os.environ.get('MICROMOVE_DATA_DIR')
