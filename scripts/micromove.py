@@ -11,7 +11,8 @@ import sqlite3
 import sys
 from urllib.parse import urlsplit
 
-DEFAULT = {'enabled': False, 'times': ['11:00', '16:00'], 'snooze_until': 0, 'url': ''}
+TEAM_WEB_URL = 'https://micromove-micromove-d9gupht5p7fe00299.webapps.tcloudbase.com'
+DEFAULT = {'enabled': False, 'times': ['11:00', '16:00'], 'snooze_until': 0, 'url': TEAM_WEB_URL}
 MESSAGE = '这段忙完了吗？给自己充一点电，30 秒也可以。'
 
 
@@ -24,7 +25,9 @@ def data_dir():
 def state():
     root = data_dir()
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
-    db = sqlite3.connect(root / 'state.sqlite3', timeout=0.2)
+    # Allow concurrent sessions on slower disks to finish their short write.
+    # Still bounded below the host's 3-second hook timeout for a lock wait.
+    db = sqlite3.connect(root / 'state.sqlite3', timeout=2.0)
     try:
         db.execute('CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY, value TEXT)')
         db.execute('BEGIN IMMEDIATE')
@@ -96,22 +99,46 @@ def reminder(s):
             'actions': ['现在动一下', '10 分钟后提醒'], 'url': s['url'] or None}
 
 
+def prompt_context(s, event_name):
+    message = MESSAGE + ' 你可以回复“现在动一下”或“10 分钟后提醒”。'
+    return {
+        'hookSpecificOutput': {
+            'hookEventName': 'UserPromptSubmit',
+            'additionalContext': (
+                'MicroMove reminder is due. Start the user-facing reply with this exact '
+                f'Chinese reminder: {message} Then answer the user normally. '
+                'Do not claim that a background timer is running.'
+            ),
+        },
+        'systemMessage': 'MicroMove 已检查到到期提醒。',
+    }
+
+
 def run_hook():
     try:
         # Discard conversation fields; bounded input is never persisted.
         event = json.loads(sys.stdin.read(65537))
         if not isinstance(event, dict) or event.get('stop_hook_active'):
             return {}
-        if event.get('hook_event_name') not in ('SessionStart', 'Stop'):
+        if event.get('hook_event_name') != 'UserPromptSubmit':
             return {}
         with state() as s:
             s['last_hook'] = {'event': event['hook_event_name'],
                               'at': datetime.now().astimezone().isoformat(),
                               'script': str(Path(__file__).resolve())}
             if s.pop('probe_pending', False):
-                return {'systemMessage': 'MicroMove 安装检查通过：已收到 ' + event['hook_event_name'] + ' 事件。'}
+                return {
+                    'hookSpecificOutput': {
+                        'hookEventName': 'UserPromptSubmit',
+                        'additionalContext': (
+                            'MicroMove installation check passed on a real user prompt. '
+                            'Start your reply with: “MicroMove 安装检查通过，现在可以正常提醒。”'
+                        ),
+                    },
+                    'systemMessage': 'MicroMove 安装检查通过。',
+                }
             if due(s, datetime.now().astimezone()):
-                return {'systemMessage': MESSAGE + ' MicroMove：回复“现在动一下”或“10 分钟后提醒”。'}
+                return prompt_context(s, event['hook_event_name'])
     except (ValueError, OSError, sqlite3.Error, KeyError, TypeError):
         # A wellness reminder must never break the coding workflow.
         pass
@@ -167,10 +194,10 @@ def main():
                           'enabled': s['enabled'], 'last_hook': s.get('last_hook'),
                           'probe_pending': s.get('probe_pending', False),
                           'host_trust': 'unknown', 'ui_delivery': 'unverified',
-                          'next_step': '在 Codex /hooks 中核对两个 MicroMove hooks 均为 Active；运行 probe 后结束一次回复，确认界面出现安装检查消息。历史事件记录不代表当前授权或界面显示正常。'}
+                          'next_step': '在 Codex /hooks 中核对 UserPromptSubmit 的 MicroMove hook 为 Active；运行 probe 后发送下一条真实消息，确认回复开头出现安装检查消息。历史事件记录不代表当前授权或界面显示正常。'}
             elif args.command == 'probe':
                 result = {'probe_pending': True,
-                          'note': '下一次 SessionStart / Stop 将显示一次安装检查消息，不改变提醒开关或消费计划。请观察主机界面；不要手动调用 hook 或 check 代替验收。'}
+                          'note': '下一次真实用户消息会显示一次安装检查消息，不改变提醒开关或消费计划。请观察主机界面；不要手动调用 hook 或 check 代替验收。'}
             elif args.command == 'check':
                 result = reminder(s) if due(s, now) else {'due': False}
             elif args.command in ('demo', 'start'):
@@ -179,7 +206,7 @@ def main():
                     result['note'] = '尚未配置团队跟练网页；本原型不生成动作处方。'
             else:
                 result = {**s, 'timezone': str(now.tzinfo), 'delivery': 'event-driven',
-                          'note': '仅在 SessionStart / Stop 或 check 时检查，不是后台闹钟。'}
+                          'note': '仅在 UserPromptSubmit 或 check 时检查，不是后台闹钟。'}
             print(json.dumps(result, ensure_ascii=False, indent=2))
     except (ValueError, OSError, sqlite3.Error) as e:
         p.exit(1, f'MicroMove: {e}\n')
