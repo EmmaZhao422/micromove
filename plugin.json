@@ -1,0 +1,12 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "micromove",
+  "version": "0.1.0",
+  "description": "Gentle, local work-break reminders for Codex on macOS.",
+  "author": {"name": "Emma Zhao", "url": "https://github.com/EmmaZhao422"},
+  "homepage": "https://github.com/EmmaZhao422/micromove",
+  "repository": "https://github.com/EmmaZhao422/micromove",
+  "license": "MIT",
+  "keywords": ["codex", "wellness", "break-reminder", "macos"],
+  "extensions": {"com.openai": {"hooks": "./hooks/hooks.json", "onboardingSkill": "./skills/micromove/SKILL.md", "interface": {"displayName": "MicroMove · 回个电", "shortDescription": "工作间隙，轻轻提醒你动一下。", "longDescription": "Local, opt-in movement reminders for Codex on macOS.", "developerName": "Emma Zhao", "category": "Productivity", "capabilities": [], "websiteURL": "https://github.com/EmmaZhao422/micromove", "privacyPolicyURL": "https://github.com/EmmaZhao422/micromove#privacy", "defaultPrompt": "用 MicroMove 设置工作间隙提醒"}}}
+}
