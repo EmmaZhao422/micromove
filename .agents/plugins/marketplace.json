@@ -1,0 +1,5 @@
+{
+  "name": "micromove-marketplace",
+  "interface": {"displayName": "MicroMove"},
+  "plugins": [{"name": "micromove", "source": {"source": "local", "path": "./"}, "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"}, "category": "Productivity"}]
+}
